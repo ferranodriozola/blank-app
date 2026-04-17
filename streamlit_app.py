@@ -2,36 +2,36 @@ import streamlit as st
 import pandas as pd
 
 # --- CONFIGURACIÓ DE LA PÀGINA ---
-st.set_page_config(page_title="Visor de Dades", page_icon="📊")
+st.set_page_config(page_title="Visor de Text Pla", page_icon="📄")
 
-st.title("📊 Previsualització de l'Excel")
+st.title("📄 Dades en format Text")
 
-# 1. ID del teu Google Sheet (extret de la teva URL)
+# ID del teu Google Sheet
 SHEET_ID = "1FvNGh_SySwgVFaPHBzAxd6EocWnOCPQ-kUTFe1TIWSE"
-# 2. Construïm la URL d'exportació directa a CSV
 URL_CSV = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
-if st.button('Carregar dades de Google Sheets'):
-    with st.spinner('Connectant amb Google Sheets...'):
+if st.button('Convertir dades a text'):
+    with st.spinner('Llegint dades...'):
         try:
-            # Llegim tot el document
+            # 1. Llegim l'Excel
             df = pd.read_csv(URL_CSV)
             
-            # FILTRATGE (A:H és columnes 0 a 8, Files 1:10 és índex 0 a 10)
-            # .iloc[files, columnes]
+            # 2. Agafem el rang A1:H10 (Files 0-10, Columnes 0-8)
             df_filtrat = df.iloc[0:10, 0:8]
             
-            st.success("Dades carregades correctament!")
+            # 3. Convertim la taula a una cadena de text (String)
+            # index=False fa que no surtin els números de fila a l'esquerra
+            text_pla = df_filtrat.to_string(index=False)
             
-            # Mostrem la taula a la web
-            # st.dataframe crea una taula interactiva (pots moure columnes, ordenar, etc.)
-            st.subheader("Segment seleccionat (A1:H10):")
-            st.dataframe(df_filtrat, use_container_width=True)
+            st.success("Aquí tens el resultat en text pla:")
             
-            # Si prefereixes una taula estàtica i neta, pots fer servir:
-            # st.table(df_filtrat)
+            # 4. Imprimim a la web dins d'un bloc de codi
+            st.code(text_pla, language='text')
+            
+            # Opcional: Si vols un format de text encara més simple i petit:
+            # st.text(text_pla)
 
         except Exception as e:
-            st.error(f"No s'ha pogut llegir l'arxiu. Revisa que el Sheets estigui 'Publicat a la web'. Error: {e}")
+            st.error(f"Error al processar: {e}")
 else:
-    st.info("Prem el botó per veure l'estat actual de l'Excel.")
+    st.info("Prem el botó per transformar l'Excel en text.")
