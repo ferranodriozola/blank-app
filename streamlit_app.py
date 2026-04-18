@@ -8,7 +8,7 @@ st.title("🛠️ Visor de Dades de l'Equip")
 st.write("Tria com vols visualitzar les dades del Google Sheet.")
 
 # 1. Configuració de la font de dades
-SHEET_ID = "1FvNGh_SySwgVFaPHBzAxd6EocWnOCPQ-kUTFe1TIWSE"
+
 URL_CSV = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
 # 2. Interfície de selecció
