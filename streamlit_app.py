@@ -33,7 +33,7 @@ if st.button('Carregar i Convertir'):
             
             if opcio == 'Taula Interactiva':
                 st.subheader("Visualització en format Taula")
-                st.dataframe(df_filtrat, use_container_width=True)
+                st.dataframe(df_filtrat, width='stretch')
                 st.info("💡 Consell: Pots clicar a les capçaleres per ordenar les dades.")
             
             else:
