@@ -9,7 +9,7 @@ st.write("Tria com vols visualitzar les dades del Google Sheet.")
 
 # 1. Configuració de la font de dades
 
-URL_CSV = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+URL_CSV = f"https://docs.google.com/spreadsheets/d/{st.secrets["SHEET_ID"]}/export?format=csv"
 
 # 2. Interfície de selecció
 opcio = st.radio(
