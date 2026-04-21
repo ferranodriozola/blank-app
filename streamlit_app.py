@@ -29,7 +29,7 @@ if st.button('Carregar i Convertir'):
             df = pd.read_csv(URL_CSV)
             
             # Filtrem el rang A1:H10
-            df_filtrat = df.iloc[0:10, 0:8]
+            df_filtrat = df.iloc[0:5, 0:11]
             
             if opcio == 'Taula Interactiva':
                 st.subheader("Visualització en format Taula")
