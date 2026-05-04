@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 
 st.set_page_config(page_title="Llista a xml", page_icon="🛠️")
 
-st.title("Visor de dades")
+st.title("XLSX a XML")
 
 URL_XLSX = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID']}/export?format=xlsx"
 
@@ -79,7 +79,7 @@ def construir_person_xml(fila: pd.Series) -> str:
     lang_knowledge = _llista_camp(fila.iloc[PERSON_COLS['lang_knowledge']])
     faith = _text_segura(fila.iloc[PERSON_COLS['faith']])
 
-    linies = [f'<person xml:id="{escape(xml_id)}">']
+    linies = [f'<!-- {escape(nom)} -->\n<person xml:id="{escape(xml_id)}">']
 
     attrs_persname = []
     if role:
@@ -105,7 +105,7 @@ def construir_person_xml(fila: pd.Series) -> str:
     if faith:
         linies.append(f'   <faith>{escape(faith)}</faith>')
 
-    linies.append('</person>')
+    linies.append('</person>\n')
     return '\n'.join(linies)
 
 def construir_place_xml(fila: pd.Series) -> str:
@@ -116,7 +116,7 @@ def construir_place_xml(fila: pd.Series) -> str:
     latitud = _text_segura(fila.iloc[PLACE_COLS['latitude']])
     longitud = _text_segura(fila.iloc[PLACE_COLS['longitude']])
 
-    linies = [f'<place xml:id="{escape(xml_id)}">']
+    linies = [f'<!-- {escape(nom)} -->\n<place xml:id="{escape(xml_id)}">']
 
     attrs_placename = []
     if ref:
@@ -134,7 +134,7 @@ def construir_place_xml(fila: pd.Series) -> str:
         linies.append(f'      <geo> {escape(geo_text)} </geo>')
         linies.append('   </location>')
 
-    linies.append('</place>')
+    linies.append('</place>\n')
     return '\n'.join(linies)
 
 fulls_disponibles = obtenir_fulls(URL_XLSX)[:2]
