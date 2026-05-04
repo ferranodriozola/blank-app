@@ -13,6 +13,30 @@ st.title("Visor de dades")
 # 1. Configuració de la font de dades
 URL_XLSX = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID']}/export?format=xlsx"
 
+# Índexs de columnes per a cada full (0-indexed)
+PERSON_COLS = {
+    'name': 0,           # personName
+    'id': 1,             # ID
+    'ref_viaf': 2,       # Ref VIAF
+    'role': 3,           # role
+    'occupation': 4,     # occupation (més d'una?)
+    'birth': 5,          # birth
+    'certainty1': 6,     # certainty1
+    'death': 7,          # death
+    'certainty2': 8,     # certainty2
+    'lang_knowledge': 9, # lang knowledge (més d'un?)
+    'faith': 10,         # faith
+}
+
+PLACE_COLS = {
+    'name': 0,      # placeName
+    'id': 1,        # ID
+    'country': 2,   # Country
+    'ref_maps': 3,  # ref Google Maps
+    'latitude': 4,  # Latitud
+    'longitude': 5, # Longitud
+}
+
 
 @st.cache_data
 def descarregar_excel(url_xlsx: str) -> bytes:
@@ -51,18 +75,18 @@ def _etiqueta_opcional(tag: str, contingut: str, cert: str = "") -> str:
 
 
 def construir_person_xml(fila: pd.Series) -> str:
-    nom = _text_segura(fila.get('FDHV'))
-    xml_id = _text_segura(fila.get('ID'))
-    role = _text_segura(fila.get('role'))
-    ref = _text_segura(fila.get('Ref VIAF'))
+    nom = _text_segura(fila.iloc[PERSON_COLS['name']])
+    xml_id = _text_segura(fila.iloc[PERSON_COLS['id']])
+    role = _text_segura(fila.iloc[PERSON_COLS['role']])
+    ref = _text_segura(fila.iloc[PERSON_COLS['ref_viaf']])
 
-    ocupacions = _llista_camp(fila.get("occupation (més d'una?)"))
-    birth = _text_segura(fila.get('birth'))
-    death = _text_segura(fila.get('death'))
-    cert_birth = _text_segura(fila.get('certainty1'))
-    cert_death = _text_segura(fila.get('certainty2'))
-    lang_knowledge = _llista_camp(fila.get("lang knowledge (més d'un?)"))
-    faith = _text_segura(fila.get('faith'))
+    ocupacions = _llista_camp(fila.iloc[PERSON_COLS['occupation']])
+    birth = _text_segura(fila.iloc[PERSON_COLS['birth']])
+    death = _text_segura(fila.iloc[PERSON_COLS['death']])
+    cert_birth = _text_segura(fila.iloc[PERSON_COLS['certainty1']])
+    cert_death = _text_segura(fila.iloc[PERSON_COLS['certainty2']])
+    lang_knowledge = _llista_camp(fila.iloc[PERSON_COLS['lang_knowledge']])
+    faith = _text_segura(fila.iloc[PERSON_COLS['faith']])
 
     linies = [f'<person xml:id="{escape(xml_id)}">']
 
@@ -93,6 +117,37 @@ def construir_person_xml(fila: pd.Series) -> str:
     linies.append('</person>')
     return '\n'.join(linies)
 
+
+def construir_place_xml(fila: pd.Series) -> str:
+    nom = _text_segura(fila.iloc[PLACE_COLS['name']])
+    xml_id = _text_segura(fila.iloc[PLACE_COLS['id']]) or nom
+    ref = _text_segura(fila.iloc[PLACE_COLS['ref_maps']])
+    pais = _text_segura(fila.iloc[PLACE_COLS['country']])
+    latitud = _text_segura(fila.iloc[PLACE_COLS['latitude']])
+    longitud = _text_segura(fila.iloc[PLACE_COLS['longitude']])
+
+    linies = [f'<place xml:id="{escape(xml_id)}">']
+
+    attrs_placename = []
+    if ref:
+        attrs_placename.append(f'ref="{escape(ref)}"')
+
+    attrs_text = f" {' '.join(attrs_placename)}" if attrs_placename else ""
+    linies.append(f'   <placeName{attrs_text}>{escape(nom)}</placeName>')
+
+    if pais:
+        linies.append(f'   <country>{escape(pais)}</country>')
+
+    if latitud or longitud:
+        linies.append('   <location>')
+        geo_text = f"{latitud}, {longitud}" if (latitud and longitud) else (latitud or longitud)
+        linies.append(f'      <geo> {escape(geo_text)} </geo>')
+        linies.append('   </location>')
+
+    linies.append('</place>')
+    return '\n'.join(linies)
+
+
 fulls_disponibles = obtenir_fulls(URL_XLSX)[:2]
 
 if not fulls_disponibles:
@@ -101,9 +156,6 @@ if not fulls_disponibles:
 
 # 2. Interfície de selecció
 full_seleccionat = st.selectbox("Selecciona el full de l'Excel:", fulls_disponibles)
-
-# Afegim un separador visual
-st.divider()
 
 # 3. Botó d'execució
 if st.button('Carregar i Convertir'):
@@ -115,24 +167,44 @@ if st.button('Carregar i Convertir'):
             # Mostrem les primeres files i columnes utilitzades per les llistes
             df_filtrat = df.iloc[0:250, 0:11]
             
-            st.subheader("Personatges en format XML")
+            if full_seleccionat == 'listPerson':
+                st.subheader("Personatges en format XML")
 
-            files_valides = df_filtrat.copy()
-            if 'ID' in files_valides.columns:
-                files_valides = files_valides[files_valides['ID'].notna()]
-            if 'FDHV' in files_valides.columns:
-                files_valides = files_valides[files_valides['FDHV'].notna()]
+                files_valides = df_filtrat.copy()
+                # Filtrem per columna d'ID (índex 1)
+                files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['id']].notna()]
+                # Filtrem per columna de nom (índex 0)
+                files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['name']].notna()]
 
-            if files_valides.empty:
-                st.warning("No hi ha personatges vàlids al full seleccionat.")
+                if files_valides.empty:
+                    st.warning("No hi ha personatges vàlids al full seleccionat.")
+                else:
+                    for _, fila in files_valides.iterrows():
+                        nom = _text_segura(fila.iloc[PERSON_COLS['name']]) or '(sense nom)'
+                        xml_id = _text_segura(fila.iloc[PERSON_COLS['id']]) or '(sense id)'
+                        st.markdown(f"**{nom} ({xml_id})**")
+                        st.code(construir_person_xml(fila), language='xml')
+
+            elif full_seleccionat == 'listPlace':
+                st.subheader("Llocs en format XML")
+
+                files_valides = df_filtrat.copy()
+                # Filtrem per columna d'ID (índex 1)
+                files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['id']].notna()]
+                # Filtrem per columna de nom (índex 0)
+                files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['name']].notna()]
+
+                if files_valides.empty:
+                    st.warning("No hi ha llocs vàlids al full seleccionat.")
+                else:
+                    for _, fila in files_valides.iterrows():
+                        nom = _text_segura(fila.iloc[PLACE_COLS['name']]) or '(sense nom)'
+                        xml_id = _text_segura(fila.get('ID')) or nom
+                        st.markdown(f"**{nom} ({xml_id})**")
+                        st.code(construir_place_xml(fila), language='xml')
+
             else:
-                for _, fila in files_valides.iterrows():
-                    nom = _text_segura(fila.get('FDHV')) or '(sense nom)'
-                    xml_id = _text_segura(fila.get('ID')) or '(sense id)'
-                    st.markdown(f"**{nom} ({xml_id})**")
-                    st.code(construir_person_xml(fila), language='xml')
+                st.warning("Full no reconegut. Prova amb listPerson o listPlace.")
 
         except Exception as e:
             st.error(f"S'ha produït un error en la connexió: {e}")
-else:
-    st.info("Selecciona un full i prem el botó per començar.")
