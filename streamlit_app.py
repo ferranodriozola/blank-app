@@ -166,7 +166,7 @@ with st.spinner('Processant dades...'):
     try:
         df = llegir_full(URL_XLSX, full_seleccionat)
 
-        df_filtrat = df.iloc[0:1000, 0:11]
+        df_filtrat = df.iloc[0:1000, 0:12]
 
         if full_seleccionat == 'listPerson':
             st.subheader("Personatges en format XML")
