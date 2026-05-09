@@ -88,12 +88,10 @@ def construir_person_xml(fila: pd.Series) -> str:
     attrs_persname = []
     if role:
         attrs_persname.append(f'role="{escape(role)}"')
-    if ref:
-        attrs_persname.append(f'ref="{escape(ref)}"')
-    if ref_2:
-        attrs_persname.append(f'ref="{escape(ref_2)}"')
-    if ref_3:
-        attrs_persname.append(f'ref="{escape(ref_3)}"')
+
+    refs = [escape(r) for r in (ref, ref_2, ref_3) if r]
+    if refs:
+        attrs_persname.append(f'ref="{' '.join(refs)}"')
 
     attrs_text = f" {' '.join(attrs_persname)}" if attrs_persname else ""
     linies.append(f'   <persName{attrs_text}>{escape(nom)}</persName>')
