@@ -15,14 +15,16 @@ PERSON_COLS = {
     'name': 0,           
     'id': 1,             
     'ref_viaf': 2,       
-    'role': 3,           
-    'occupation': 4,     
-    'birth': 5,          
-    'certainty1': 6,     
-    'death': 7,          
-    'certainty2': 8,     
-    'lang_knowledge': 9, 
-    'faith': 10,         
+    'ref_2': 3,
+    'ref_3': 4,
+    'role': 5,           
+    'occupation': 6,     
+    'birth': 7,          
+    'certainty1': 8,     
+    'death': 9,          
+    'certainty2': 10,     
+    'lang_knowledge': 11, 
+    'faith': 12,         
 }
 
 PLACE_COLS = {
@@ -70,6 +72,8 @@ def construir_person_xml(fila: pd.Series) -> str:
     xml_id = _text_segura(fila.iloc[PERSON_COLS['id']])
     role = _text_segura(fila.iloc[PERSON_COLS['role']])
     ref = _text_segura(fila.iloc[PERSON_COLS['ref_viaf']])
+    ref_2 = _text_segura(fila.iloc[PERSON_COLS['ref_2']])
+    ref_3 = _text_segura(fila.iloc[PERSON_COLS['ref_3']])
 
     ocupacions = _llista_camp(fila.iloc[PERSON_COLS['occupation']])
     birth = _text_segura(fila.iloc[PERSON_COLS['birth']])
@@ -86,6 +90,10 @@ def construir_person_xml(fila: pd.Series) -> str:
         attrs_persname.append(f'role="{escape(role)}"')
     if ref:
         attrs_persname.append(f'ref="{escape(ref)}"')
+    if ref_2:
+        attrs_persname.append(f'ref="{escape(ref_2)}"')
+    if ref_3:
+        attrs_persname.append(f'ref="{escape(ref_3)}"')
 
     attrs_text = f" {' '.join(attrs_persname)}" if attrs_persname else ""
     linies.append(f'   <persName{attrs_text}>{escape(nom)}</persName>')
@@ -131,7 +139,7 @@ def construir_place_xml(fila: pd.Series) -> str:
     if latitud or longitud:
         linies.append('   <location>')
         geo_text = f"{latitud}, {longitud}" if (latitud and longitud) else (latitud or longitud)
-        linies.append(f'      <geo> {escape(geo_text)} </geo>')
+        linies.append(f'      <geo>{escape(geo_text)}</geo>')
         linies.append('   </location>')
 
     linies.append('</place>\n')
