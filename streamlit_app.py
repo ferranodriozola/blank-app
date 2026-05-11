@@ -7,7 +7,40 @@ from xml.sax.saxutils import escape
 
 st.set_page_config(page_title="Llista a xml", page_icon="🛠️")
 
+st.markdown('<div id="top"></div>', unsafe_allow_html=True)
 st.title("XLSX a XML")
+st.markdown(
+    """
+    <style>
+    .scroll-top-link {
+        position: fixed;
+        right: 1.25rem;
+        bottom: 1.25rem;
+        z-index: 9999;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 999px;
+        background: #0f766e;
+        color: white !important;
+        text-decoration: none;
+        font-size: 1.4rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .scroll-top-link:hover {
+        transform: translateY(-2px);
+        background: #115e59;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    }
+    </style>
+    <a class="scroll-top-link" href="#top" title="Puja cap a dalt">↑</a>
+    """,
+    unsafe_allow_html=True,
+)
 
 URL_XLSX = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID']}/export?format=xlsx"
 
