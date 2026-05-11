@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape
 
 st.set_page_config(page_title="Llista a xml", page_icon="🛠️")
 
-st.markdown('<div id="top"></div>', unsafe_allow_html=True)
+st.markdown('<div id="top" style="position: relative; top: -3.5rem;"></div>', unsafe_allow_html=True)
 st.title("XLSX a XML")
 st.markdown(
     """
@@ -15,7 +15,7 @@ st.markdown(
     .scroll-top-link {
         position: fixed;
         right: 1.25rem;
-        bottom: 1.25rem;
+        bottom: 3 rem;
         z-index: 9999;
         display: inline-flex;
         align-items: center;
