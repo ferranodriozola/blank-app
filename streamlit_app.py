@@ -15,7 +15,7 @@ st.markdown(
     .scroll-top-link {
         position: fixed;
         right: 1.25rem;
-        bottom: 3 rem;
+        bottom: 2 rem;
         z-index: 9999;
         display: inline-flex;
         align-items: center;
