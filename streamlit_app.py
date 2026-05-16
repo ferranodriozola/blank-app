@@ -42,7 +42,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-URL_XLSX = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID']}/export?format=xlsx"
+URL_XLSX = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID_1']}/export?format=xlsx"
+URL_XLSX_2 = f"https://docs.google.com/spreadsheets/d/{st.secrets['SHEET_ID_2']}/export?format=xlsx"
 
 PERSON_COLS = {
     'name': 0,           
@@ -100,6 +101,120 @@ def _etiqueta_opcional(tag: str, contingut: str, cert: str = "") -> str:
     atribut_cert = f' cert="{escape(cert)}"' if cert else ""
     return f'   <{tag}{atribut_cert}>{escape(contingut)}</{tag}>'
 
+
+def renderitzar_font_dades(url_xlsx: str, prefix_clau: str) -> None:
+    if url_xlsx == URL_XLSX:
+        fulls_disponibles = obtenir_fulls(url_xlsx)[:2]
+
+        if not fulls_disponibles:
+            st.error("No s'han trobat fulls disponibles a l'Excel.")
+            return
+
+        full_seleccionat = st.selectbox(
+            "Selecciona el full de l'Excel:",
+            fulls_disponibles,
+            key=f"{prefix_clau}_full",
+        )
+
+        if st.button('Forçar recàrrega', key=f"{prefix_clau}_reload"):
+            descarregar_excel.clear()
+            obtenir_fulls.clear()
+            llegir_full.clear()
+            if hasattr(st, 'rerun'):
+                st.rerun()
+            else:
+                st.stop()
+
+        with st.spinner('Processant dades...'):
+            try:
+                df = llegir_full(url_xlsx, full_seleccionat)
+
+                df_filtrat = df.iloc[0:1000, 0:15]
+
+                if full_seleccionat == 'listPerson':
+                    st.subheader("Personatges en format XML")
+
+                    files_valides = df_filtrat.copy()
+                    files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['id']].notna()]
+                    files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['name']].notna()]
+
+                    if files_valides.empty:
+                        st.warning("No hi ha personatges vàlids al full seleccionat.")
+                    else:
+                        for _, fila in files_valides.iterrows():
+                            nom = _text_segura(fila.iloc[PERSON_COLS['name']]) or '(sense nom)'
+                            xml_id = _text_segura(fila.iloc[PERSON_COLS['id']]) or '(sense id)'
+                            st.markdown(f"**{nom} ({xml_id})**")
+                            st.code(construir_person_xml(fila), language='xml')
+
+                elif full_seleccionat == 'listPlace':
+                    st.subheader("Llocs en format XML")
+
+                    files_valides = df_filtrat.copy()
+                    files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['id']].notna()]
+                    files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['name']].notna()]
+
+                    if files_valides.empty:
+                        st.warning("No hi ha llocs vàlids al full seleccionat.")
+                    else:
+                        for _, fila in files_valides.iterrows():
+                            nom = _text_segura(fila.iloc[PLACE_COLS['name']]) or '(sense nom)'
+                            xml_id = _text_segura(fila.iloc[PLACE_COLS['id']]) or nom
+                            st.markdown(f"**{nom} ({xml_id})**")
+                            st.code(construir_place_xml(fila), language='xml')
+
+                else:
+                    st.warning("Full no reconegut. Prova amb listPerson o listPlace.")
+
+            except Exception as e:
+                st.error(f"S'ha produït un error en la connexió: {e}")
+    if url_xlsx == URL_XLSX_2:
+        fulls_disponibles = obtenir_fulls(url_xlsx)[:1]
+
+        if not fulls_disponibles:
+            st.error("No s'han trobat fulls disponibles a l'Excel.")
+            return
+
+        full_seleccionat = st.selectbox(
+            "Selecciona el full de l'Excel:",
+            fulls_disponibles,
+            key=f"{prefix_clau}_full",
+        )
+
+        if st.button('Forçar recàrrega', key=f"{prefix_clau}_reload"):
+            descarregar_excel.clear()
+            obtenir_fulls.clear()
+            llegir_full.clear()
+            if hasattr(st, 'rerun'):
+                st.rerun()
+            else:
+                st.stop()
+
+        with st.spinner('Processant dades...'):
+            try:
+                df = llegir_full(url_xlsx, full_seleccionat)
+
+                df_filtrat = df.iloc[0:1473, 0:3]
+
+                st.subheader("Personatges en format XML")
+
+                files_valides = df_filtrat.copy()
+                files_valides = files_valides[files_valides.iloc[:, 1].notna()]  # Filtrar per columna ID (1)
+                files_valides = files_valides[files_valides.iloc[:, 1] != ""]  # Sense files buides a ID
+
+                if files_valides.empty:
+                    st.warning("No hi ha personatges vàlids al full seleccionat.")
+                else:
+                    for _, fila in files_valides.iterrows():
+                        nom = _text_segura(fila.iloc[0]) or '(sense nom)'
+                        xml_id = _text_segura(fila.iloc[1]) or '(sense id)'
+                        st.markdown(f"**{nom} ({xml_id})**")
+                        st.code(construir_person_xml_simple(fila), language='xml')
+
+            except Exception as e:
+                st.error(f"S'ha produït un error en la connexió: {e}")
+
+
 def construir_person_xml(fila: pd.Series) -> str:
     nom = _text_segura(fila.iloc[PERSON_COLS['name']])
     xml_id = _text_segura(fila.iloc[PERSON_COLS['id']])
@@ -124,7 +239,7 @@ def construir_person_xml(fila: pd.Series) -> str:
 
     refs = [escape(r) for r in (ref, ref_2, ref_3) if r]
     if refs:
-        attrs_persname.append(f'ref="{' '.join(refs)}"')
+        attrs_persname.append(f'ref="{" ".join(refs)}"')
 
     attrs_text = f" {' '.join(attrs_persname)}" if attrs_persname else ""
     linies.append(f'   <persName{attrs_text}>{escape(nom)}</persName>')
@@ -176,63 +291,18 @@ def construir_place_xml(fila: pd.Series) -> str:
     linies.append('</place>\n')
     return '\n'.join(linies)
 
-fulls_disponibles = obtenir_fulls(URL_XLSX)[:2]
+def construir_person_xml_simple(fila: pd.Series) -> str:
+    nom = _text_segura(fila.iloc[0])  # Name (columna 0)
+    xml_id = _text_segura(fila.iloc[1])  # ID (columna 1)
+    
+    linies = [f'<!-- {escape(nom)} -->', f'<person xml:id="{escape(xml_id)}">', f'   <persName>{escape(nom)}</persName>', '</person>']
+    
+    return '\n'.join(linies)
 
-if not fulls_disponibles:
-    st.error("No s'han trobat fulls disponibles a l'Excel.")
-    st.stop()
+tabs = st.tabs(["SHEET_ID_1", "SHEET_ID_2"])
 
-full_seleccionat = st.selectbox("Selecciona el full de l'Excel:", fulls_disponibles)
+with tabs[0]:
+    renderitzar_font_dades(URL_XLSX, "sheet_1")
 
-if st.button('Forçar recàrrega'):
-    descarregar_excel.clear()
-    obtenir_fulls.clear()
-    llegir_full.clear()
-    if hasattr(st, 'rerun'):
-        st.rerun()
-    else:
-        st.stop()
-
-with st.spinner('Processant dades...'):
-    try:
-        df = llegir_full(URL_XLSX, full_seleccionat)
-
-        df_filtrat = df.iloc[0:1000, 0:15]
-
-        if full_seleccionat == 'listPerson':
-            st.subheader("Personatges en format XML")
-
-            files_valides = df_filtrat.copy()
-            files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['id']].notna()]
-            files_valides = files_valides[files_valides.iloc[:, PERSON_COLS['name']].notna()]
-
-            if files_valides.empty:
-                st.warning("No hi ha personatges vàlids al full seleccionat.")
-            else:
-                for _, fila in files_valides.iterrows():
-                    nom = _text_segura(fila.iloc[PERSON_COLS['name']]) or '(sense nom)'
-                    xml_id = _text_segura(fila.iloc[PERSON_COLS['id']]) or '(sense id)'
-                    st.markdown(f"**{nom} ({xml_id})**")
-                    st.code(construir_person_xml(fila), language='xml')
-
-        elif full_seleccionat == 'listPlace':
-            st.subheader("Llocs en format XML")
-
-            files_valides = df_filtrat.copy()
-            files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['id']].notna()]
-            files_valides = files_valides[files_valides.iloc[:, PLACE_COLS['name']].notna()]
-
-            if files_valides.empty:
-                st.warning("No hi ha llocs vàlids al full seleccionat.")
-            else:
-                for _, fila in files_valides.iterrows():
-                    nom = _text_segura(fila.iloc[PLACE_COLS['name']]) or '(sense nom)'
-                    xml_id = _text_segura(fila.iloc[PLACE_COLS['id']]) or nom
-                    st.markdown(f"**{nom} ({xml_id})**")
-                    st.code(construir_place_xml(fila), language='xml')
-
-        else:
-            st.warning("Full no reconegut. Prova amb listPerson o listPlace.")
-
-    except Exception as e:
-        st.error(f"S'ha produït un error en la connexió: {e}")
+with tabs[1]:
+    renderitzar_font_dades(URL_XLSX_2, "sheet_2")
